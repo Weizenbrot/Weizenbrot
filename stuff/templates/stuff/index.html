@@ -1,0 +1,17 @@
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'stuff/style.css' %}">
+
+
+<div class="navbar">
+  <a class="active">Home</a>
+  <div class="dropdown">
+    <button class="dropbtn">Simulations
+      <i class="fa fa-caret-down"></i>
+    </button>
+    <div class="dropdown-content">
+      <a href="{% url 'simulations:boids' %}">Boids</a>
+      <a href="{% url 'simulations:gravity' %}">Gravity</a>
+    </div>
+  </div> 
+</div>

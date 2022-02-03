@@ -20,6 +20,7 @@ struct PROCESS {
     int tEmini;
     int tEmaxi;
     int prio;
+    int tRmini;
 };
 
 vector<PROCESS> prozesse;
@@ -42,7 +43,6 @@ int read_data() {
         //getline(mycsv, line); // ignore header
         getline(mycsv, line);
         while (getline(mycsv, line)) {
-            std::cout<<"neuer Prozess"<<std::endl;
             i = 0;
             istringstream s(line);
             string field;
@@ -51,8 +51,6 @@ int read_data() {
                 remove(field.begin(), field.end(), ' ');
                 remove(field.begin(), field.end(), '\n');
                 remove(field.begin(), field.end(), '\t');
-                cout<<i<<endl;
-                fflush(stdout);
                 switch(i) {
                     case 0: temp.name = (char) field[0]; break;
                     case 1: temp.tPmini = stoi(field); break;
@@ -66,6 +64,7 @@ int read_data() {
                 }
                 i++;
             }
+            temp.tRmini = temp.tEmini;
             prozesse.push_back(temp);
         }
     } else {
@@ -114,7 +113,7 @@ bool utilization() {
         } else {
             cout<<"(" <<(double)prozesse.at(i).tEmaxi<<"/"<<(double)prozesse.at(i).tPmini<<")"; 
         }
-        u += (double)prozesse.at(i).tEmaxi/min; 
+        u += ((double)prozesse.at(i).tEmaxi)/min; 
     }
     if(u <= s) {
         cout<<"\nUtilization ERFÜLLT u = "<< u<<" <= s = " << s<<endl;
@@ -127,6 +126,66 @@ bool utilization() {
     }
 }
 
+
+int tC_berechnen(int prio) {
+    cout<<"\n\n---------tC"<<prio<<"----------\n"<<endl;
+
+    // Schritt 1: tCp Gleichung aufstellen
+    for(int i = 0; i<prozesse.size(); i++) {
+        if(prozesse.at(i).prio <= prio) {
+            if(i != 0) {
+                cout<<" + (" <<" |^ t/"<<prozesse.at(i).tPmini<<" ms ^| * "<<prozesse.at(i).tEmaxi<<"ms )"; 
+            } else {
+                cout<<"(" <<" |^ t/"<<prozesse.at(i).tPmini<<" ms ^| * "<<prozesse.at(i).tEmaxi<<"ms )"; 
+            }
+        }
+    }
+
+    cout<<"\n\nStart Iteration"<<endl;
+    
+    // Schritt 2: Startwert tp1 errechnen
+    int startwert=0;
+    cout<<"\nStartwert: tp1= ";
+    for(int i = 0; i<prozesse.size(); i++) {
+        if(prozesse.at(i).prio <= prio) {
+            if(i != 0) {
+                cout<<"+ " <<prozesse.at(i).tEmaxi<<" "; 
+            } else {
+                cout<<prozesse.at(i).tEmaxi<<" "; 
+            }
+            startwert += prozesse.at(i).tEmaxi;
+        }
+    }
+    cout<<" = "<<startwert<<" ms";
+
+    // Schritt 3: Iteration
+
+    int last=startwert, current=startwert, sum=0, count=0;
+    do {
+        sum = 0;
+        cout<<"\ntc,"<<prio<<" ("<<current<<"ms) = ";
+        // Schritt 1: tCp Gleichung aufstellen
+        for(int i = 0; i<prozesse.size(); i++) {
+            if(prozesse.at(i).prio <= prio) {
+                if(i != 0) {
+                    cout<<" + (" <<" |^ "<<current<<"ms /"<<prozesse.at(i).tPmini<<" ms ^| * "<<prozesse.at(i).tEmaxi<<")"; 
+                } else {
+                    cout<<"(" <<" |^ "<<current<<"ms /"<<prozesse.at(i).tPmini<<" ms ^| * "<<prozesse.at(i).tEmaxi<<")"; 
+                }
+                sum += ceil((double)current/(double)prozesse.at(i).tPmini) * prozesse.at(i).tEmaxi;
+            }
+        }
+        last = current;
+        current = sum; 
+        count ++;
+        cout<<"\n";
+    }while(last != current);
+
+    cout<<"\nStopp: tp"<<count-1<<" == tp"<<count<<endl;
+
+    cout<<"tRmax,"<<prio<<" = "<<current<<" ms "<<endl;
+
+}
 
 
 
@@ -152,7 +211,7 @@ int main(int argc, char *argv[]) {
         if(!a) {
             // utilization nicht erfüllt
             // iteration machen
-            vanilla();
+            tC_berechnen(1);    
         }
     }
     return 0;

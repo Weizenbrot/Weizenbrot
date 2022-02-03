@@ -9,7 +9,8 @@
 
 using namespace std; 
 
-unsigned int anzahl_kerne;
+int anzahl_kerne, anzahl_prios;
+
 
 struct PROCESS {
     unsigned char name;
@@ -21,6 +22,7 @@ struct PROCESS {
     int tEmaxi;
     int prio;
     int tRmini;
+    int tRmaxi;
 };
 
 vector<PROCESS> prozesse;
@@ -185,8 +187,31 @@ int tC_berechnen(int prio) {
 
     cout<<"tRmax,"<<prio<<" = "<<current<<" ms "<<endl;
 
+
+
+    // tRmaxi bei allen Prozessen mit prio prio einsetzen
+    for(int i = 0; i<prozesse.size(); i++) {
+        if(prozesse.at(i).prio == prio) {
+            prozesse.at(i).tRmaxi = current;
+        }
+    }
+
+    return current;
 }
 
+
+
+int rechtzeitigkeitsbedingung() {
+    cout<<"\n\n------Check Rechtueitigkeitsbedingung----------\n"<<endl;
+    for(int i = 0; i < prozesse.size(); i++) {
+        cout<<prozesse.at(i).name<<": "<<prozesse.at(i).tDmini<<"<="<<prozesse.at(i).tRmini<<"<="<<prozesse.at(i).tRmaxi<<"<="<<prozesse.at(i).tDmaxi;
+        if((prozesse.at(i).tDmini<=prozesse.at(i).tRmini) && ( prozesse.at(i).tRmini <=prozesse.at(i).tRmaxi ) && (prozesse.at(i).tRmaxi<=prozesse.at(i).tDmaxi)) {
+            cout<<"\n";
+        } else {
+            cout<<"  <---- X "<<endl;
+        }
+    }
+}
 
 
 int vanilla() {
@@ -199,6 +224,11 @@ int main(int argc, char *argv[]) {
         anzahl_kerne = 1;
     } else {
         anzahl_kerne = stoi(argv[1]);
+        if(argc < 3) {
+            anzahl_prios = 1;
+        } else {
+            anzahl_prios = stoi(argv[2]);
+        }
     }
     bool a; 
     read_data();
@@ -211,7 +241,10 @@ int main(int argc, char *argv[]) {
         if(!a) {
             // utilization nicht erfüllt
             // iteration machen
-            tC_berechnen(1);    
+            for(int i = 1; i <= anzahl_prios; i++) {
+                tC_berechnen(i);
+            }    
+            rechtzeitigkeitsbedingung();
         }
     }
     return 0;
